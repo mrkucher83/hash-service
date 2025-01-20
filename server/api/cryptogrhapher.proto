@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package stringhash;
+option go_package = "./;pb";
+
+service StringHashService {
+  rpc HashStrings (stream StringArrayRequest) returns (stream HashArrayResponse);
+}
+
+message StringArrayRequest {
+  repeated string values = 1; // Массив строк для хэширования
+}
+
+message HashArrayResponse {
+  repeated string hashes = 1; // Массив хэшей строк
+}
