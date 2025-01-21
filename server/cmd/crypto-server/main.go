@@ -14,6 +14,8 @@ import (
 const DefaultPort = "50051"
 
 func main() {
+	logger.InitLogger(logger.NewLogrusLogger())
+
 	port := DefaultPort
 	if value, ok := syscall.Getenv("SERVER_PORT"); ok {
 		port = value
