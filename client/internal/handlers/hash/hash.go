@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc"
 	"io"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -43,7 +44,8 @@ func CreateHashes(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(req.Params)
 
 	// sending data via grpc streaming
-	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure(), grpc.WithBlock())
+	grpcServerAddress := os.Getenv("GRPC_SERVER")
+	conn, err := grpc.Dial(grpcServerAddress, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		logger.ErrorCtx(r.Context(), "failed to connect to grpc server: %v", err)
 		return
