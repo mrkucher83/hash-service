@@ -11,3 +11,21 @@ services:
       - "8080:8080"
     environment:
       - GRPC_SERVER=grpc-server:50051
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+    depends_on:
+      - pgdb
+
+  pgdb:
+    image: "postgres:11"
+    container_name: "pgdb"
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "54320:5432"
+    volumes:
+      - /Users/alexanderkucher/rebrain/db/data:/var/lib/postgresql/data
