@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/mrkucher83/hash-service/client/internal/godb"
 	"github.com/mrkucher83/hash-service/client/pkg/logger"
 	"github.com/mrkucher83/hash-service/server/pkg/pb"
 	"google.golang.org/grpc"
@@ -18,7 +19,15 @@ type ReqBody struct {
 	Params []string
 }
 
-func CreateHashes(w http.ResponseWriter, r *http.Request) {
+type Repo struct {
+	storage *godb.Instance
+}
+
+func NewRepo(r *godb.Instance) *Repo {
+	return &Repo{storage: r}
+}
+
+func (hr *Repo) CreateHashes(w http.ResponseWriter, r *http.Request) {
 	// reading request body
 	data, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -94,9 +103,31 @@ func CreateHashes(w http.ResponseWriter, r *http.Request) {
 		}
 		hashArrays = append(hashArrays, resp.Hashes...)
 	}
-	fmt.Println(hashArrays)
+
+	// storing hashes into DB
+	var response []godb.Resp
+	for _, hash := range hashArrays {
+		rec := &godb.Record{
+			Text: hash,
+		}
+		res, err := hr.storage.AddRecord(ctx, rec)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		response = append(response, *res)
+	}
+
+	fmt.Println(response)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err = json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, "failed to encode response: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
-func GetHashes(w http.ResponseWriter, r *http.Request) {
+func (hr *Repo) GetHashes(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Get hashes page"))
 }

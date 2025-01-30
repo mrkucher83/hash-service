@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v4/pgxpool"
+	_ "github.com/lib/pq"
+	"github.com/mrkucher83/hash-service/client/internal/godb"
 	"github.com/mrkucher83/hash-service/client/pkg/logger"
 	"github.com/pressly/goose"
 	"net/url"
@@ -38,8 +40,8 @@ func NewPoolConfig(cfg *Config) (*pgxpool.Config, error) {
 	return poolConfig, nil
 }
 
-func NewConnection(poolConfig *pgxpool.Config) (*pgxpool.Pool, error) {
-	conn, err := pgxpool.NewWithConfig(context.Background(), poolConfig)
+func NewConnection(ctx context.Context, poolConfig *pgxpool.Config) (*pgxpool.Pool, error) {
+	conn, err := pgxpool.ConnectConfig(ctx, poolConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -47,41 +49,51 @@ func NewConnection(poolConfig *pgxpool.Config) (*pgxpool.Pool, error) {
 	return conn, nil
 }
 
-func NewDbInstance() {
-	cfg := &Config{
-		Host:     os.Getenv("DB_HOST"),
-		Port:     os.Getenv("DB_PORT"),
-		Username: os.Getenv("DB_USER"),
-		Password: os.Getenv("DB_PASSWORD"),
-		DbName:   os.Getenv("DB_NAME"),
-		Timeout:  5,
+func MigrationsRun(conf *pgxpool.Config) error {
+	mdb, _ := sql.Open("postgres", conf.ConnString())
+	err := mdb.Ping()
+	if err != nil {
+		return err
 	}
+	err = goose.Up(mdb, "/var")
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func NewDbInstance() (*godb.Instance, error) {
+	cfg := &Config{}
+	cfg.Host = os.Getenv("DB_HOST")
+	cfg.Username = os.Getenv("DB_USER")
+	cfg.Password = os.Getenv("DB_PASSWORD")
+	cfg.Port = os.Getenv("DB_PORT")
+	cfg.DbName = os.Getenv("DB_NAME")
+	cfg.Timeout = 5
 
 	poolConfig, err := NewPoolConfig(cfg)
 	if err != nil {
-		logger.Fatal("Pool config error: %v\n", err)
+		return nil, fmt.Errorf("Pool config error: %v\n", err)
 	}
 	poolConfig.MaxConns = 5
 
-	c, err := NewConnection(poolConfig)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c, err := NewConnection(ctx, poolConfig)
 	if err != nil {
-		logger.Fatal("Connect to database failed: %v\n", err)
+		return nil, fmt.Errorf("connect to database failed: %v\n", err)
 	}
 	logger.Info("Successful connection to the DB!")
 
-	mdb, _ := sql.Open("postgres", poolConfig.ConnString())
-	err = mdb.Ping()
-	if err != nil {
-		logger.Fatal("database migration ping error: %v\n", err)
+	if err = MigrationsRun(poolConfig); err != nil {
+		return nil, fmt.Errorf("database migration error: %v\n", err)
 	}
 
-	err = goose.Up(mdb, "./internal/migrations")
+	_, err = c.Exec(ctx, ";")
 	if err != nil {
-		logger.Fatal("database migration up error: %v\n", err)
+		return nil, fmt.Errorf("database ping error: %v\n", err)
 	}
 
-	_, err = c.Exec(context.Background(), ";")
-	if err != nil {
-		logger.Fatal("database ping error: %v\n", err)
-	}
+	return &godb.Instance{Db: c}, nil
 }

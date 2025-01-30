@@ -3,6 +3,7 @@ package routes
 import (
 	"context"
 	"github.com/go-chi/chi"
+	"github.com/mrkucher83/hash-service/client/internal/godb"
 	"github.com/mrkucher83/hash-service/client/internal/handlers/hash"
 	"github.com/mrkucher83/hash-service/client/pkg/logger"
 	"net/http"
@@ -12,15 +13,17 @@ import (
 	"time"
 )
 
-func Start(port string) {
+func Start(port string, repo *godb.Instance) {
+	h := hash.NewRepo(repo)
+
 	r := chi.NewRouter()
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		if _, err := w.Write([]byte("Welcome to HashVault service!")); err != nil {
 			logger.Warn("failed to write response: ", err)
 		}
 	})
-	r.Post("/send", hash.CreateHashes)
-	r.Get("/check", hash.GetHashes)
+	r.Post("/send", h.CreateHashes)
+	r.Get("/check", h.GetHashes)
 
 	logger.Info("starting server on %s", port)
 	server := &http.Server{Addr: ":" + port, Handler: r}

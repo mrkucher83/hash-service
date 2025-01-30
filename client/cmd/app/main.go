@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/mrkucher83/hash-service/client/internal/routes"
+	"github.com/mrkucher83/hash-service/client/pkg/helpers/pg"
 	"github.com/mrkucher83/hash-service/client/pkg/logger"
 	"syscall"
 )
@@ -16,5 +17,11 @@ func main() {
 		port = value
 	}
 
-	routes.Start(port)
+	repo, err := pg.NewDbInstance()
+	if err != nil {
+		logger.Fatal("failed connecting to DB: %w", err)
+	}
+	defer repo.Close()
+
+	routes.Start(port, repo)
 }
