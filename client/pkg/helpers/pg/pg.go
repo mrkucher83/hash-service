@@ -49,7 +49,7 @@ func NewConnection(ctx context.Context, poolConfig *pgxpool.Config) (*pgxpool.Po
 	return conn, nil
 }
 
-func MigrationsRun(conf *pgxpool.Config) error {
+func runMigrations(conf *pgxpool.Config) error {
 	mdb, _ := sql.Open("postgres", conf.ConnString())
 	err := mdb.Ping()
 	if err != nil {
@@ -62,15 +62,22 @@ func MigrationsRun(conf *pgxpool.Config) error {
 	return nil
 }
 
-func NewDbInstance() (*godb.Instance, error) {
-	cfg := &Config{}
-	cfg.Host = os.Getenv("DB_HOST")
-	cfg.Username = os.Getenv("DB_USER")
-	cfg.Password = os.Getenv("DB_PASSWORD")
-	cfg.Port = os.Getenv("DB_PORT")
-	cfg.DbName = os.Getenv("DB_NAME")
-	cfg.Timeout = 5
+func loadConfig() *Config {
+	return &Config{
+		Host:     os.Getenv("DB_HOST"),
+		Username: os.Getenv("DB_USER"),
+		Password: os.Getenv("DB_PASSWORD"),
+		Port:     os.Getenv("DB_PORT"),
+		DbName:   os.Getenv("DB_NAME"),
+		Timeout:  5,
+	}
+}
 
+func NewDbInstance() (*godb.Instance, error) {
+	// Инициализация конфигурации
+	cfg := loadConfig()
+
+	// Настройка пула соединений
 	poolConfig, err := NewPoolConfig(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("Pool config error: %v\n", err)
@@ -80,16 +87,19 @@ func NewDbInstance() (*godb.Instance, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// Установка соединения с базой данных
 	c, err := NewConnection(ctx, poolConfig)
 	if err != nil {
 		return nil, fmt.Errorf("connect to database failed: %v\n", err)
 	}
 	logger.Info("Successful connection to the DB!")
 
-	if err = MigrationsRun(poolConfig); err != nil {
+	// Запуск миграций
+	if err = runMigrations(poolConfig); err != nil {
 		return nil, fmt.Errorf("database migration error: %v\n", err)
 	}
 
+	// Проверка подключения
 	_, err = c.Exec(ctx, ";")
 	if err != nil {
 		return nil, fmt.Errorf("database ping error: %v\n", err)

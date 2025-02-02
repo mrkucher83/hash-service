@@ -36,14 +36,14 @@ func (i *Instance) AddRecord(ctx context.Context, rec *Record) (*Resp, error) {
 	return &resp, nil
 }
 
-func (i *Instance) GetRecordById(ctx context.Context, id int) (*Record, error) {
+func (i *Instance) GetRecordById(ctx context.Context, id int) (*Resp, error) {
 	query := `SELECT id, hash_value FROM hash_storage WHERE id = $1;`
 
-	var rec Record
-	err := i.Db.QueryRow(ctx, query, id).Scan(&rec.Id, &rec.Text)
+	var resp Resp
+	err := i.Db.QueryRow(ctx, query, id).Scan(&resp.Id, &resp.Hash)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get record by id: %w", err)
 	}
 
-	return &rec, nil
+	return &resp, nil
 }

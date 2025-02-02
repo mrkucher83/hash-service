@@ -23,7 +23,7 @@ func Start(port string, repo *godb.Instance) {
 		}
 	})
 	r.Post("/send", h.CreateHashes)
-	r.Get("/check", h.GetHashes)
+	r.Get("/check/{ids:[0-9,]+}", h.GetHashes)
 
 	logger.Info("starting server on %s", port)
 	server := &http.Server{Addr: ":" + port, Handler: r}
