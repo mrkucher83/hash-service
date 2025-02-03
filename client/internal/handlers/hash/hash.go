@@ -69,7 +69,7 @@ func (hr *Repo) CreateHashes(w http.ResponseWriter, r *http.Request) {
 
 	grpcClient := pb.NewStringHashServiceClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	ctx, cancel := context.WithTimeout(r.Context(), time.Second*10)
 	defer cancel()
 
 	stream, err := grpcClient.HashStrings(ctx)

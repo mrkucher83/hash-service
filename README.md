@@ -1,15 +1,15 @@
 ## Hasher
 
-### Docker:
-- hasher:
+### Запуск проекта:
 ```shell
+cd hash-service
 docker-compose up
 ```
 
 ### Environment
 - HASHER_PORT
 - ENVIRONMENT // prod or dev
-- DB_URL // конфиг для подключению к ДБ
+- Остальные переменные окружения прописаны в Docker-compose файле
 
 
 ### Swagger spec

@@ -21,7 +21,7 @@ func (s *Server) HashStrings(stream pb.StringHashService_HashStringsServer) erro
 				return nil
 			}
 
-			logger.Error("failed unexpectedly while reading from stream: %v", err)
+			logger.ErrorCtx(stream.Context(), "failed unexpectedly while reading from stream: %v", err)
 			return err
 		}
 
@@ -33,7 +33,7 @@ func (s *Server) HashStrings(stream pb.StringHashService_HashStringsServer) erro
 			Hashes: hashes,
 		}
 		if err = stream.Send(resp); err != nil {
-			logger.Error("failed to send response to the client: %v", err)
+			logger.ErrorCtx(stream.Context(), "failed to send response to the client: %v", err)
 		}
 		return err
 	}
