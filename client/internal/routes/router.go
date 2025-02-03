@@ -5,6 +5,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/mrkucher83/hash-service/client/internal/godb"
 	"github.com/mrkucher83/hash-service/client/internal/handlers/hash"
+	"github.com/mrkucher83/hash-service/client/internal/middleware"
 	"github.com/mrkucher83/hash-service/client/pkg/logger"
 	"net/http"
 	"os"
@@ -17,6 +18,8 @@ func Start(port string, repo *godb.Instance) {
 	h := hash.NewRepo(repo)
 
 	r := chi.NewRouter()
+	r.Use(middleware.ContextRequestMiddleware)
+
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		if _, err := w.Write([]byte("Welcome to HashVault service!")); err != nil {
 			logger.Warn("failed to write response: ", err)

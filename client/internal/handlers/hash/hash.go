@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/go-chi/chi"
 	"github.com/mrkucher83/hash-service/client/internal/godb"
 	"github.com/mrkucher83/hash-service/client/pkg/logger"
@@ -53,7 +52,6 @@ func (hr *Repo) CreateHashes(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "received empty params", http.StatusBadRequest)
 		return
 	}
-	fmt.Println(req.Params)
 
 	// sending data via grpc streaming
 	grpcServerAddress := os.Getenv("GRPC_SERVER")
