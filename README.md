@@ -1,15 +1,25 @@
 ## Hasher
+Итоговый проект курсв REBRAIN Golang Advanced.
 
-### Запуск проекта:
+Данный сервис, взаимодействуя с сервисом считающим хэши (SHA-3), получает из входящих строк их хэши, сохраняет их в БД (PostgresQl) с присвоем id, по которым далее можно будет запрашивать хэши.
+
+### Запуск проекта локально:
+- Добавить .env файл с переменными окружения
 ```shell
 cd hash-service
 docker-compose up
 ```
 
 ### Environment
+- DB_HOST=pgdb
+- DB_PORT=5432
+- DB_USER
+- DB_PASSWORD
+- DB_NAME
+
+- GRPC_SERVER=grpc-server:50051
 - HASHER_PORT
 - ENVIRONMENT // prod or dev
-- Остальные переменные окружения прописаны в Docker-compose файле
 
 
 ### Swagger spec
